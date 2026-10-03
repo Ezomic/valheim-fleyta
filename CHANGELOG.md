@@ -19,3 +19,21 @@ be installed on every machine, not only the host's.
 Not run in game yet. The defaults for how deep the water must be before a boat counts as
 afloat (2 m) and for the push speed are estimates; Verbose writes the real hull masses and
 every decision to the log so they can be tuned.
+
+Review follow-ups, same unreleased version:
+
+- The boat's owner no longer takes a shove on trust. It checks that the hull is aground, that
+  the sender's player is standing within reach of it (by the game's synced position, not a
+  number in the request), and that it is not already moving, then clamps speed and time to its
+  own limits instead of dropping out-of-range requests.
+- Both ends take their limits from the same config (the longest shove is MaxDistance over
+  MinSpeed, doubled, plus three seconds), so a longship moves the same whether you or someone
+  else owns it. The owner now answers each request, and stamina is paid when it accepts, so a
+  refused shove costs nothing and says why.
+- The shove key also waits for the game's own input check, so it does nothing during a
+  cutscene or while another window has taken input.
+- A boat floating in shallow water is no longer treated as aground. Aground now requires the
+  hull to be out of the water's reach by the ship's own buoyancy test, so a moored boat in
+  1.5 m is not offered a shove and cannot be pushed off its mooring.
+- Documented that an unattended hull in the water is damped hard, which bears on FloatDepth
+  and Acceleration; both are on the play test list.

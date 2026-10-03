@@ -27,7 +27,8 @@ namespace Fleyta
 
             var ship = __instance;
             nview.Register<Vector3, float, float>(Shoving.RpcName,
-                (sender, direction, speed, seconds) => Shoving.OnRequest(ship, direction, speed, seconds));
+                (sender, direction, speed, seconds) => Shoving.OnRequest(ship, sender, direction, speed, seconds));
+            nview.Register<bool, string>(Shoving.ReplyName, Shoving.OnReply);
         }
 
         [HarmonyPostfix]
@@ -37,6 +38,7 @@ namespace Fleyta
             if (__instance != Player.m_localPlayer) return;
             if (!FleytaConfig.Enabled.Value) return;
             if (__instance.IsDead() || InventoryGui.IsVisible() || Menu.IsVisible()) return;
+            if (!Keys.PlayerTakesInput(__instance)) return;
             if (!Keys.Pressed(FleytaConfig.ShoveKey.Value)) return;
 
             Shoving.TryShove(__instance);
@@ -45,7 +47,8 @@ namespace Fleyta
         /// <summary>
         /// The helm is the only thing on a ship the crosshair can land on, so its hover is
         /// where the key is named. Shown only when pressing it would do something: an
-        /// unattended hull, not excluded, and aground.
+        /// unattended hull, not excluded, and aground (resting on the ground, not floating in
+        /// shallows).
         /// </summary>
         [HarmonyPostfix]
         [HarmonyPatch(typeof(ShipControlls), nameof(ShipControlls.GetHoverText))]
@@ -58,7 +61,7 @@ namespace Fleyta
             if (Shove.Active(ship)) return;
 
             var body = ship.GetComponent<Rigidbody>();
-            if (body == null || !Water.Aground(body.worldCenterOfMass)) return;
+            if (body == null || !Water.Aground(ship, body.worldCenterOfMass)) return;
 
             __result += "\n[<color=yellow><b>" + FleytaConfig.ShoveKey.Value + "</b></color>] Shove toward the water";
         }

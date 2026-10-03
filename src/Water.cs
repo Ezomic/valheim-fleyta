@@ -48,13 +48,38 @@ namespace Fleyta
         /// <summary>
         /// True only when the terrain is known and too shallow to float the hull. A boat on
         /// a dock stands over deep ground, so it is afloat by this measure whatever it rests
-        /// on, and a boat in a zone that is not loaded is neither.
+        /// on, and a boat in a zone that is not loaded is neither. Says nothing about whether
+        /// the hull is actually on the ground: a boat moored in 1.5 m of water is shallow
+        /// here and floating, which is what Resting is for.
         /// </summary>
-        internal static bool Aground(Vector3 at)
+        internal static bool Shallow(Vector3 at)
         {
             float ground;
             return Heightmap.GetHeight(at, out ground)
                    && ground > SeaLevel - FleytaConfig.FloatDepth.Value;
+        }
+
+        /// <summary>
+        /// True when the hull is out of the water's reach, by the ship's own test. Ship.
+        /// CustomFixedUpdate applies buoyancy only while the centre of mass is no more than
+        /// m_disableLevel above the water (centre.y - water - m_waterLevelOffset &lt;=
+        /// m_disableLevel), and a hull above that line is carried by the ground alone. A hull
+        /// below it is floating, however shallow the water, and a moored boat must not be
+        /// offered a shove. Sea level is flat in vanilla, so the wave term the game averages
+        /// in is the only difference, and it is centimetres.
+        /// </summary>
+        internal static bool Resting(Ship ship, Vector3 centre)
+        {
+            return centre.y - SeaLevel - ship.m_waterLevelOffset > ship.m_disableLevel;
+        }
+
+        /// <summary>
+        /// Shallow ground with the hull actually resting on it: the only state a shove
+        /// applies to.
+        /// </summary>
+        internal static bool Aground(Ship ship, Vector3 centre)
+        {
+            return Shallow(centre) && Resting(ship, centre);
         }
 
         /// <summary>

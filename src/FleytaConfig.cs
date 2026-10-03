@@ -43,7 +43,7 @@ namespace Fleyta
                 + "nearest water. Yours alone: the host never rebinds it.");
 
             StaminaCost = cfg.Bind("Fleyta", "StaminaCost", 20f,
-                "Stamina spent on each shove, taken before the boat moves and not refunded if "
+                "Stamina spent on each shove, taken when the shove starts (when the boat's owner accepts it) and not refunded if "
                 + "it jams on a rock. One press is the whole job, so this is a flat price and "
                 + "not a drain: a longship costs the same to start as a karve, it just moves "
                 + "slower. 0 makes it free.");
