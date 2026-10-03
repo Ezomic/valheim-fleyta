@@ -57,6 +57,17 @@ each decision, including the hull's real mass, to the log.
 Note that changing a default in a new version does nothing on a machine that has already run
 the mod. BepInEx writes every entry on first run and the saved value wins.
 
+## Needs a play test
+
+Not run in game yet, and two settings depend on a vanilla behaviour that could only be read
+from the code. An unattended hull is damped hard in the water: the game multiplies its
+horizontal speed by 0.1 every physics step while nobody is aboard and the hull's centre is
+0.5 m or more under the water line. A shove therefore does not coast into the sea, and where
+the hull is already in that regime but not yet over `FloatDepth` the push crawls. Tune
+`FloatDepth` and `Acceleration` together: a `FloatDepth` that is too deep makes the last
+metres crawl, an `Acceleration` that is too low makes them stall. `Verbose` logs where a
+shove ends.
+
 ## Multiplayer
 
 **Everyone needs it.** A boat is moved by whichever player's game owns it, and force applied

@@ -56,7 +56,7 @@ namespace Fleyta
                 if (ship == null) { term.AddString("fleyta: no boat within reach"); return; }
 
                 var centre = ship.GetComponent<Rigidbody>().worldCenterOfMass;
-                var state = Water.Afloat(centre) ? "afloat" : Water.Aground(centre) ? "aground" : "unknown";
+                var state = Water.Afloat(centre) ? "afloat" : !Water.Shallow(centre) ? "unknown" : Water.Resting(ship, centre) ? "aground" : "floating in the shallows";
                 var moving = Shove.Active(ship) ? ", moving" : "";
 
                 term.AddString("fleyta: " + Utils.GetPrefabName(ship.gameObject) + " is " + state + moving);

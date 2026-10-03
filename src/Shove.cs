@@ -20,6 +20,17 @@ namespace Fleyta
     /// request to whoever owns the boat. It stops the moment the hull is over floating
     /// depth, and from then on Ship.CustomFixedUpdate's buoyancy and the player's rowing are
     /// the game's, with whatever momentum is left.
+    ///
+    /// Not measured: an unattended hull is damped hard once it is in the water. Ship.
+    /// CustomFixedUpdate multiplies the horizontal velocity by 0.1 every physics step when no
+    /// player is aboard and the hull's centre is 0.5 m or more under the water line (the
+    /// buoyancy branch, depth &lt;= m_disableLevel). So a slide that crosses into the sea does
+    /// not coast: the momentum is gone within a few steps, and in the band where the hull is
+    /// already in the buoyancy branch but not yet over FloatDepth, this controller's per-step
+    /// gain (Acceleration * dt) is what is left against that damping, giving a crawl of
+    /// roughly Acceleration * dt / 0.9 instead of the target speed. FloatDepth and
+    /// Acceleration are therefore tuned together, in game: too deep a FloatDepth makes the
+    /// last metres crawl, too low an Acceleration makes them stall.
     /// </summary>
     internal sealed class Shove : MonoBehaviour
     {
