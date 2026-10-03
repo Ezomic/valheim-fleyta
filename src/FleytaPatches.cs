@@ -1,65 +1,66 @@
 using HarmonyLib;
+using UnityEngine;
 
 namespace Fleyta
 {
     /// <summary>
-    /// The mod's Harmony patches. One class named in the plugin's PatchAll, so nothing goes
-    /// live by being written.
+    /// Three small hooks: register the RPC on every ship, read the key, and name the key in
+    /// the helm's hover text.
     ///
-    /// Two rules that this file exists to hold in view.
-    ///
-    /// Ride vanilla systems rather than hand-rolling them. The suite's mods do their work by
-    /// reading the game's own tables - Smelter.m_conversion, the Hammer's piece table - and
-    /// by going through Player.PlacePiece so validity stays the game's problem. Keeping new
-    /// features on that seam is what makes them survive a game update; a custom subclass or
-    /// a patch on movement trades that away.
-    ///
-    /// Never guess an API. Read it, with
-    /// <c>ilspycmd -t &lt;Type&gt; -r "&lt;ManagedDir&gt;" "&lt;ManagedDir&gt;\assembly_valheim.dll"</c>,
-    /// or take the numbers off a devkit rip. A wrong method name is a Harmony patch that
-    /// throws once at load and then quietly never runs.
+    /// Nothing here touches movement. The push is a component on the boat (Shove) and the
+    /// game's own buoyancy takes over once the hull floats, which is the seam that survives
+    /// a game update.
     /// </summary>
     internal static class FleytaPatches
     {
         /// <summary>
-        /// A patch that does nothing, kept so the wiring is proved rather than assumed. It
-        /// is the first thing to check when a mod loads and appears to do nothing at all: if
-        /// this line is absent from the log, the problem is the patch not applying, not the
-        /// logic behind it.
+        /// Every ship, on every machine that has the mod, can be asked to shove itself. The
+        /// registration has to exist wherever the ZDO might be owned, because the request is
+        /// routed to the owner and an owner without the handler drops it with a log line.
         /// </summary>
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Player), nameof(Player.OnSpawned))]
-        private static void OnSpawned(Player __instance)
+        [HarmonyPatch(typeof(Ship), "Start")]
+        private static void ShipStart(Ship __instance)
         {
-            // Every player object in the scene runs this, not only yours. Anything meant for
-            // the person at the keyboard needs this line.
-            if (__instance != Player.m_localPlayer) return;
-            if (!FleytaConfig.Enabled.Value || !FleytaConfig.Verbose.Value) return;
+            var nview = __instance.GetComponent<ZNetView>();
+            if (nview == null || !nview.IsValid()) return;
 
-            FleytaPlugin.Log.LogInfo("Player spawned - patches are live.");
+            var ship = __instance;
+            nview.Register<Vector3, float, float>(Shoving.RpcName,
+                (sender, direction, speed, seconds) => Shoving.OnRequest(ship, direction, speed, seconds));
         }
 
-        // Traps worth having in front of you while writing the real ones. All of these were
-        // paid for once already:
-        //
-        //   Character.OnDeath runs on the OWNING CLIENT ONLY. Its own !IsOwner() early
-        //   return is dead code, so the block above it looks like it runs everywhere and
-        //   does not. Anything per-player at a kill has to be done by the owner for
-        //   everybody, e.g. through Player.GetPlayersInRange.
-        //
-        //   SEMan.Internal_AddStatusEffect refreshes an already-running effect in place and
-        //   returns without reaching the public AddStatusEffect overload. Patching only the
-        //   public one misses every refresh.
-        //
-        //   Player.ConsumeItem removes the item whatever EatFood returned. Refuse food in
-        //   CanConsumeItem, which is the gate that path respects; refusing later destroys it.
-        //
-        //   The first ObjectDB.Awake of a session fires against a stub with no items. Gate
-        //   anything that reads the item database on m_items.Count > 0, and hook
-        //   ObjectDB.CopyOtherDB as well - that is the path a client takes on joining a
-        //   server.
-        //
-        //   Writing to a container or ZDO you do not own is silently discarded. Call
-        //   nview.ClaimOwnership() first, which is what vanilla's Take All does.
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Player), "Update")]
+        private static void PlayerUpdate(Player __instance)
+        {
+            if (__instance != Player.m_localPlayer) return;
+            if (!FleytaConfig.Enabled.Value) return;
+            if (__instance.IsDead() || InventoryGui.IsVisible() || Menu.IsVisible()) return;
+            if (!Keys.Pressed(FleytaConfig.ShoveKey.Value)) return;
+
+            Shoving.TryShove(__instance);
+        }
+
+        /// <summary>
+        /// The helm is the only thing on a ship the crosshair can land on, so its hover is
+        /// where the key is named. Shown only when pressing it would do something: an
+        /// unattended hull, not excluded, and aground.
+        /// </summary>
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(ShipControlls), nameof(ShipControlls.GetHoverText))]
+        private static void HelmHover(ShipControlls __instance, ref string __result)
+        {
+            if (!FleytaConfig.Enabled.Value || FleytaConfig.ShoveKey.Value == KeyCode.None) return;
+
+            var ship = __instance.m_ship;
+            if (ship == null || ship.HasPlayerOnboard() || Shoving.IsExcluded(ship)) return;
+            if (Shove.Active(ship)) return;
+
+            var body = ship.GetComponent<Rigidbody>();
+            if (body == null || !Water.Aground(body.worldCenterOfMass)) return;
+
+            __result += "\n[<color=yellow><b>" + FleytaConfig.ShoveKey.Value + "</b></color>] Shove toward the water";
+        }
     }
 }

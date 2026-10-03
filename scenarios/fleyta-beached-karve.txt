@@ -1,0 +1,54 @@
+# Fleyta: a Karve left on a beach is shoved into the sea by one press, and a boat that is
+# already afloat is left alone.
+#
+# STAND ON A SHORE FIRST. Devkit flattens 34m round you before the first step, so this wants a
+# beach with open sea within 30m (the default MaxDistance) and nothing built or standing between
+# the boat and the water. Sea level is 30; the ground a few metres in from the shoreline is
+# what the boat is set down on, and the plan reads the terrain, not the line you stand on, so
+# the beach may face any way. This is not something the scenario can arrange: Devkit's stage
+# levels ground and does not move a coastline.
+#
+# The shove goes through `mod fleyta shove`, which calls the exact routine the key calls, so
+# the stamina, the reach test and the plan are the real ones. It needs 20 stamina; a fresh
+# character has it, and a run that fails with "Not enough stamina" is a tired character and
+# not the mod.
+#
+# `place Karve` drops the boat 4m ahead of you. If Devkit refuses to place a boat there, or the
+# game will not stand one on land, put a Karve on the sand yourself within 4m and delete the
+# place line; every later step only needs the boat to be the nearest one.
+#
+# THE TRAP, if this fails: `fleyta state` reads "unknown" when the ground under the hull has
+# no heightmap loaded, which is a zone not yet streamed in. Wait and run again before reading
+# it as the mod being broken. And "aground" needs the ground under the hull's CENTRE to be
+# higher than sea level minus FloatDepth (2m by default): a Karve set down in a metre of water
+# is, by that measure, aground, and one on a dock over deep water is afloat.
+#
+# What this cannot cover: the boat belonging to ANOTHER player (the RPC to the owner) and the
+# "water too far" message. Both are hand tests.
+
+clear
+god
+wipe 14
+wait 1
+
+place Karve 4 0 0
+wait 3
+
+mod fleyta state
+printed aground yes
+
+mod fleyta shove
+printed shoving yes
+
+# Let the slide start before asking. A press only registers the slide; the hull moves on the
+# physics steps after it.
+wait 2
+
+# Asked again once a second until the boat reports afloat, and fails saying so after 40s.
+mod fleyta state
+until 40 afloat
+printed afloat yes
+
+# Afloat now, so a second press must do nothing and say why.
+mod fleyta shove
+printed already afloat yes

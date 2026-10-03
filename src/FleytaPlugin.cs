@@ -8,15 +8,20 @@ using HarmonyLib;
 namespace Fleyta
 {
     /// <summary>
-    /// Fleyta. One sentence saying what the mod does, then a paragraph saying why it is
-    /// worth having - the design argument, not the feature list. That paragraph is the thing
-    /// future-you reads first.
+    /// Fleyta, Old Norse "to set afloat". Stand beside a boat that is aground, press a key,
+    /// and it slides toward the nearest water until it floats.
     ///
-    /// Say here whether the mod is client-side, and say it in terms of where the work
-    /// happens rather than by habit. "Client-side" means every effect is computed by the
-    /// owning client off state it already has. The moment a decision reads another player's
-    /// progress, writes a shared ZDO, or registers a prefab, it is not client-side any more
-    /// and Requirement.Everyone below is load-bearing.
+    /// Vanilla gives a player on foot no way to move a boat at all: a hull run onto a beach
+    /// is recoverable only by boarding and rowing against the sand, or by waiting for waves.
+    /// This is the one gesture that fixes that, and nothing more: it does nothing to a boat
+    /// that already floats, and the moment the hull is over floating depth the game's own
+    /// buoyancy and the player's oars take over.
+    ///
+    /// Not client-side, and the reason is where the work happens. A Ship is moved by the
+    /// machine that owns its ZDO, and a force from any other machine is overwritten, so the
+    /// pusher measures the terrain and routes an RPC to the owner, who runs the slide.
+    /// Whoever owns a boat may be any player, so every machine needs the handler:
+    /// Requirement.Everyone below is load-bearing.
     ///
     /// There is deliberately no BepInProcess attribute. A dedicated server runs
     /// valheim_server.exe, and Core's gate only refuses on the server side of RPC_PeerInfo -
@@ -66,6 +71,7 @@ namespace Fleyta
             // the moment it compiles.
             _harmony = new Harmony(PluginGuid);
             _harmony.PatchAll(typeof(FleytaPatches));
+            _harmony.PatchAll(typeof(DevConsole.Hook));
 
             // The startup line every mod in the suite writes. It is how a log answers "which
             // build of what is actually loaded" without anyone guessing.
@@ -75,12 +81,10 @@ namespace Fleyta
         /// <summary>
         /// Joins Core's version gate when Core is installed, and does nothing when it is not.
         ///
-        /// Name here exactly what standing alone costs, because it is usually not the mod.
-        /// For most of these it is the *enforcement*: without Core nothing refuses a client
-        /// that lacks the plugin, so the rule becomes an agreement between players rather
-        /// than a property of the server. That is a real loss and a legitimate choice, and
-        /// it is the server owner's to make - which is why this logs rather than refusing
-        /// to run.
+        /// Standing alone costs the enforcement, and here a little more: nothing refuses a
+        /// client without the mod, and such a client that owns a boat silently drops a shove
+        /// aimed at it. It is the server owner's call, which is why this logs rather than
+        /// refusing to run.
         /// </summary>
         private void TryRegisterWithCore()
         {
@@ -106,25 +110,20 @@ namespace Fleyta
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void RegisterWithCore()
         {
-            // Requirement.Everyone or Requirement.HostOnly, and the choice is not a matter of
-            // taste. Everyone for anything that registers a prefab or changes item data,
-            // whether it looks networked or not: a client that cannot resolve a prefab hash
-            // does not fail loudly, ZNetScene discards the ZDO as junk and the thing a player
-            // built is simply gone. HostOnly only when a client without the mod is genuinely
-            // unaffected.
+            // Everyone, deliberately. HostOnly would let in a client without the mod, and that
+            // client can own a boat: the shove request is routed to the owner of the Ship's
+            // ZDO, an owner without the handler drops it, and the pusher would see the stamina
+            // spent and the boat sit still. The mod registers no prefab and changes no item,
+            // so this is about who can receive an RPC and not about hashes.
             Suite.Register(PluginGuid, PluginName, PluginVersion, Config, Requirement.Everyone);
 
-            // Registering already absorbs the whole config file, so this is a formality now.
-            // It is still worth writing: naming an entry here is saying out loud that the
-            // host decides it. Keybinds are excluded by Core itself - a host taking away
-            // someone's keys for the evening is the kind of sync that gets a mod uninstalled.
             Suite.Sync(FleytaConfig.Enabled);
 
-            // If the mod reads a data file that decides what it does, hash it too. The gate
-            // catches two ends on different builds; it cannot catch two ends running the
-            // same build over different text unless it is told.
-            //
-            //     Suite.Data(File.ReadAllText(path));
+            // Personal by intent. Core syncs the whole config by default, and a host turning
+            // on someone else's logging is not something anybody asked for. The key is
+            // exempt already; naming it would only repeat that.
+            Suite.Local(FleytaConfig.Verbose);
+
         }
 
         private void OnDestroy()
