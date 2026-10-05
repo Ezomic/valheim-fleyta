@@ -1,0 +1,12 @@
+{
+    "listed": true,
+    "short": "Press a key beside a beached boat and it slides toward the nearest water until it floats. Nothing else about boats changes.",
+    "roadmap": [
+        {
+            "key": "tune-against-real-hulls",
+            "title": "Tune the slide against real boats",
+            "status": "planned",
+            "body": "How deep the water must be before a boat counts as afloat, and how fast the push runs, are estimates so far. The mod has not been run in game yet.\n\nThe first play test sets both from what a raft-less karve and a longship actually do on a beach, so a boat neither stops in the shallows nor crawls the last few metres."
+        }
+    ]
+}
