@@ -1,8 +1,8 @@
 # Changelog
 
-## 0.1.0 - unreleased
+## 1.0.0 - 2026-10-08
 
-First version. Stand beside a boat that is aground and press the shove key (B by default):
+First release, a member of Longhouse 2.4.0. Stand beside a boat that is aground and press the shove key (B by default):
 it slides toward the nearest water until it floats, and from there it is the game's. It
 does nothing to a boat that already floats, and nothing to the raft.
 
@@ -16,11 +16,11 @@ Whoever owns the boat does the pushing. Vanilla moves a ship only from the machi
 it and discards force from any other, so the request is sent to the owner and the mod has to
 be installed on every machine, not only the host's.
 
-Not run in game yet. The defaults for how deep the water must be before a boat counts as
+Not run in game yet, alone or with other players, so the request to a boat's owner is untested. The defaults for how deep the water must be before a boat counts as
 afloat (2 m) and for the push speed are estimates; Verbose writes the real hull masses and
 every decision to the log so they can be tuned.
 
-Review follow-ups, same unreleased version:
+Review follow-ups, made before this release:
 
 - The boat's owner no longer takes a shove on trust. It checks that the hull is aground, that
   the sender's player is standing within reach of it (by the game's synced position, not a

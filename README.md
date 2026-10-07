@@ -59,7 +59,8 @@ the mod. BepInEx writes every entry on first run and the saved value wins.
 
 ## Needs a play test
 
-Not run in game yet, and two settings depend on a vanilla behaviour that could only be read
+Not run in game yet, and never in a world with other players, so the hand-over to the boat's
+owner described under Multiplayer is unproven. Two settings depend on a vanilla behaviour that could only be read
 from the code. An unattended hull is damped hard in the water: the game multiplies its
 horizontal speed by 0.1 every physics step while nobody is aboard and the hull's centre is
 0.5 m or more under the water line. A shove therefore does not coast into the sea, and where
