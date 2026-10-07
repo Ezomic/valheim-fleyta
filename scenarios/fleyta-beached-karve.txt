@@ -1,19 +1,25 @@
+#! nostage
+#
 # Fleyta: a Karve left on a beach is shoved into the sea by one press, and a boat that is
 # already afloat is left alone.
 #
-# STAND ON A SHORE FIRST. Devkit flattens 34m round you before the first step, so this wants a
-# beach with open sea within 30m (the default MaxDistance) and nothing built or standing between
-# the boat and the water. Sea level is 30; the ground a few metres in from the shoreline is
-# what the boat is set down on, and the plan reads the terrain, not the line you stand on, so
-# the beach may face any way. This is not something the scenario can arrange: Devkit's stage
-# levels ground and does not move a coastline.
+# STAND ON A SHORE FIRST, on dry sand a metre or more above the sea (sea level is 30), with open
+# sea within about 25m and nothing built or standing between the boat and the water. This file
+# is `nostage` on purpose: the automatic stage levels 30m round you plus a 4m ramp at YOUR height,
+# which flattens the shoreline itself and leaves no water within the 30m the mod looks over (the
+# first run did exactly that). It stages only 6m, enough for the boat. The plan reads the terrain
+# under the hull, not the line you stand on, so the beach may face any way. Devkit cannot move a
+# coastline.
 #
 # The shove goes through `mod fleyta shove`, which calls the exact routine the key calls, so
 # the stamina, the reach test and the plan are the real ones. It needs 20 stamina; a fresh
 # character has it, and a run that fails with "Not enough stamina" is a tired character and
 # not the mod.
 #
-# `place Karve` drops the boat 4m ahead of you. If Devkit refuses to place a boat there, or the
+# `place Karve 0 5` drops the boat 5m to your right, beam on. NOT ahead: set down 4m ahead the
+# first run, the hull's onboard trigger swallowed the player ("Player onboard" in Player.log) and
+# the mod rightly refused with "Nobody can be aboard". Its beam side stays clear of the trigger and
+# inside the 4m reach (the reach is measured to the hull's float collider). If Devkit refuses to place a boat there, or the
 # game will not stand one on land, put a Karve on the sand yourself within 4m and delete the
 # place line; every later step only needs the boat to be the nearest one.
 #
@@ -26,12 +32,13 @@
 # What this cannot cover: the boat belonging to ANOTHER player (the RPC to the owner) and the
 # "water too far" message. Both are hand tests.
 
+stage 6
 clear
 god
 wipe 14
 wait 1
 
-place Karve 4 0 0
+place Karve 0 5 0
 wait 3
 
 mod fleyta state
